@@ -7,6 +7,7 @@ import 'package:youth_safety_app/screens/login_screen.dart';
 import 'package:youth_safety_app/screens/signup_screen.dart';
 import 'package:youth_safety_app/screens/home_screen.dart';
 import 'package:youth_safety_app/screens/contacts_screen.dart';
+import 'package:youth_safety_app/screens/journey_timer_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -40,6 +41,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignupScreen(),
         '/home': (context) => const HomeScreen(),
         '/contacts': (context) => const ContactsScreen(),
+        '/journey': (context) => const JourneyTimerScreen(),
       },
     );
   }

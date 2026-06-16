@@ -153,12 +153,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 // Journey Timer Button
-                _featureButton(
-                  icon: Icons.timer,
-                  label: 'Journey Timer',
-                  color: Colors.purple,
-                  onTap: () {},
-                ),
+_featureButton(
+  icon: Icons.timer,
+  label: 'Journey Timer',
+  color: Colors.purple,
+  onTap: () {
+    Navigator.pushNamed(context, '/journey');
+  },
+),
 
                 // Call 112 Button
                 _featureButton(
