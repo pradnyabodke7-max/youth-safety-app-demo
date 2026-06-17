@@ -1,4 +1,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<!-- Internet Permission -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Location Permissions -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
+    <!-- SMS Permission -->
+    <uses-permission android:name="android.permission.SEND_SMS"/>
+
+    <!-- Call Permission -->
+    <uses-permission android:name="android.permission.CALL_PHONE"/>
+
+    <!-- Vibrate Permission -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
+
+    <!-- Wake Lock Permission -->
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <application
         android:label="youth_safety_app"
         android:name="${applicationName}"
