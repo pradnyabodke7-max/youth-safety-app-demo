@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:youth_safety_app/services/location_service.dart';
+import 'package:youth_safety_app/services/sms_service.dart';
+import 'package:youth_safety_app/services/call_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -152,14 +154,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // SOS Button
             GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('SOS Activated! Sending help...'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              },
+              onTap: () async {
+  // Show message
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('SOS Activated! Sending help...'),
+      backgroundColor: Colors.red,
+    ),
+  );
+  // Send SOS SMS
+  await SmsService.sendSOSSms();
+},
+              
               child: Container(
                 width: 200,
                 height: 200,
@@ -235,14 +241,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 // Call 112 Button
-                _featureButton(
-                  icon: Icons.call,
-                  label: 'Call 112',
-                  color: Colors.green,
-                  onTap: () {},
-                ),
-              ],
-            ),
+_featureButton(
+  icon: Icons.call,
+  label: 'Call 112',
+  color: Colors.green,
+  onTap: () async {
+    await CallService.callEmergency();
+  },
+),
 
             const SizedBox(height: 20),
           ],
