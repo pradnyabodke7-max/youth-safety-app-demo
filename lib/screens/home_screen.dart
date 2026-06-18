@@ -13,17 +13,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Location text to show on screen
   String _locationText = 'Getting location...';
 
   @override
   void initState() {
     super.initState();
-    // Get location when screen opens
     _getLocation();
   }
 
-  // Get current location
   Future<void> _getLocation() async {
     String location = await LocationService.getLocationText();
     setState(() {
@@ -35,8 +32,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-
-      // Top Bar
       appBar: AppBar(
         backgroundColor: const Color(0xFFE53935),
         title: const Text(
@@ -53,7 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -155,17 +149,14 @@ class _HomeScreenState extends State<HomeScreen> {
             // SOS Button
             GestureDetector(
               onTap: () async {
-  // Show message
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('SOS Activated! Sending help...'),
-      backgroundColor: Colors.red,
-    ),
-  );
-  // Send SOS SMS
-  await SmsService.sendSOSSms();
-},
-              
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('SOS Activated! Sending help...'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                await SmsService.sendSOSSms();
+              },
               child: Container(
                 width: 200,
                 height: 200,
@@ -241,14 +232,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 // Call 112 Button
-_featureButton(
-  icon: Icons.call,
-  label: 'Call 112',
-  color: Colors.green,
-  onTap: () async {
-    await CallService.callEmergency();
-  },
-),
+                _featureButton(
+                  icon: Icons.call,
+                  label: 'Call 112',
+                  color: Colors.green,
+                  onTap: () async {
+                    await CallService.callEmergency();
+                  },
+                ),
+              ],
+            ),
 
             const SizedBox(height: 20),
           ],
@@ -257,7 +250,6 @@ _featureButton(
     );
   }
 
-  // Feature Button Widget
   Widget _featureButton({
     required IconData icon,
     required String label,
