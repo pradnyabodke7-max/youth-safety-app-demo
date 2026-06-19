@@ -1,4 +1,4 @@
-name: youth_safety
+name: youth_safety_app
 description: "Youth Safety - SOS alerts, emergency contacts, and journey tracking."
 publish_to: 'none'
 version: 1.0.0+1
@@ -29,6 +29,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   intl: ^0.20.1
   uuid: ^4.5.1
+  shared_preferences: ^2.3.3
+  url_launcher: ^6.3.1
+
 
 dev_dependencies:
   flutter_test:
