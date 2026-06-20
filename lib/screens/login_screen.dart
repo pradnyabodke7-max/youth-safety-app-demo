@@ -1,6 +1,8 @@
 // lib/screens/login_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +18,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // This will show/hide password
   bool _passwordVisible = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,31 +151,94 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 30),
+              // Forgot Password Link
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => _showResetPasswordDialog(context),
+                  child: const Text(
+                    'Forgot Password?',
+                    style: TextStyle(color: Color(0xFFE53935)),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              // Error message (if any)
+              Consumer<AuthProvider>(
+                builder: (context, auth, _) {
+                  if (auth.errorMessage == null) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      auth.errorMessage!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                },
+              ),
 
               // Login Button
               SizedBox(
                 width: double.infinity,
                 height: 55,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Go to Home Screen
-                    Navigator.pushReplacementNamed(context, '/home');
+                child: Consumer<AuthProvider>(
+                  builder: (context, auth, _) {
+                    return ElevatedButton(
+                      onPressed: auth.isLoading
+                          ? null
+                          : () async {
+                              final email = _emailController.text.trim();
+                              final password = _passwordController.text;
+
+                              if (email.isEmpty || password.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('Please enter email and password.'),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              final success = await auth.loginUser(
+                                email: email,
+                                password: password,
+                              );
+
+                              if (success && context.mounted) {
+                                Navigator.pushReplacementNamed(
+                                    context, '/home');
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE53935),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: auth.isLoading
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Login',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE53935),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Login',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                 ),
               ),
 
@@ -199,6 +271,62 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  /// Shows a simple dialog asking for an email, then calls
+  /// AuthProvider.resetPassword() and shows the result.
+  void _showResetPasswordDialog(BuildContext context) {
+    final resetEmailController =
+        TextEditingController(text: _emailController.text);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Reset Password'),
+          content: TextField(
+            controller: resetEmailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              hintText: 'Enter your registered email',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final email = resetEmailController.text.trim();
+                if (email.isEmpty) return;
+
+                final auth =
+                    Provider.of<AuthProvider>(context, listen: false);
+                final success = await auth.resetPassword(email: email);
+
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? 'Password reset email sent. Check your inbox.'
+                            : (auth.errorMessage ??
+                                'Failed to send reset email.'),
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Send Reset Link'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "255542234980",
+    "project_id": "youth-safety-e8418",
+    "storage_bucket": "youth-safety-e8418.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:255542234980:android:b7255f9fee9d7726ba3471",
+        "android_client_info": {
+          "package_name": "com.example.youth_safety"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDrIpKxaPafOvMqczQIUj6FKu5ZvWTc-ww"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

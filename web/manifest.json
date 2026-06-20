@@ -1,6 +1,6 @@
 {
-    "name": "youth_safety_app",
-    "short_name": "youth_safety_app",
+    "name": "youth_safety",
+    "short_name": "youth_safety",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

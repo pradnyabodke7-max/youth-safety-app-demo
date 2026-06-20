@@ -1,48 +1,47 @@
-
-// lib/main.dart
-
 import 'package:flutter/material.dart';
-import 'package:youth_safety_app/screens/splash_screen.dart';
-import 'package:youth_safety_app/screens/login_screen.dart';
-import 'package:youth_safety_app/screens/signup_screen.dart';
-import 'package:youth_safety_app/screens/home_screen.dart';
-import 'package:youth_safety_app/screens/contacts_screen.dart';
-import 'package:youth_safety_app/screens/journey_timer_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'firebase_options.dart';
+import 'providers/auth_provider.dart';
+import 'screens/login_screen.dart';
+import 'screens/signup_screen.dart';
+import 'screens/home_screen.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(const YouthSafetyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class YouthSafetyApp extends StatelessWidget {
+  const YouthSafetyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      // App Name
-      title: 'Youth Safety',
-
-      // Hide the debug banner on top right
-      debugShowCheckedModeBanner: false,
-
-      // App Colors
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFE53935),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        // STEP 4 will add: ChangeNotifierProvider(create: (_) => ContactProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Youth Safety',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorSchemeSeed: const Color(0xFFE53935),
+          useMaterial3: true,
         ),
-        useMaterial3: true,
+        initialRoute: '/login',
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/signup': (context) => const SignupScreen(),
+          '/home': (context) => const HomeScreen(),
+        },
       ),
-
-      // Routes
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const SplashScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignupScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/contacts': (context) => const ContactsScreen(),
-        '/journey': (context) => const JourneyTimerScreen(),
-      },
     );
   }
 }
