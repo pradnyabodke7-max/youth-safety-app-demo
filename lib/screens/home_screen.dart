@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:youth_safety_app/services/location_service.dart';
 import 'package:youth_safety_app/services/sms_service.dart';
 import 'package:youth_safety_app/services/call_service.dart';
+import 'package:youth_safety_app/services/alarm_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,6 +15,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _locationText = 'Getting location...';
+  bool _isAlarmPlaying = false;
 
   @override
   void initState() {
@@ -204,12 +206,24 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSpacing: 16,
               children: [
                 // Panic Alarm Button
-                _featureButton(
-                  icon: Icons.volume_up,
-                  label: 'Panic Alarm',
-                  color: Colors.orange,
-                  onTap: () {},
-                ),
+_featureButton(
+  icon: _isAlarmPlaying ? Icons.volume_off : Icons.volume_up,
+  label: _isAlarmPlaying ? 'Stop Alarm' : 'Panic Alarm',
+  color: Colors.orange,
+  onTap: () async {
+    if (_isAlarmPlaying) {
+      await AlarmService.stopAlarm();
+      setState(() {
+        _isAlarmPlaying = false;
+      });
+    } else {
+      await AlarmService.playAlarm();
+      setState(() {
+        _isAlarmPlaying = true;
+      });
+    }
+  },
+),
 
                 // Emergency Contacts Button
                 _featureButton(
