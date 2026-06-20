@@ -3,6 +3,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
+import 'providers/auth_provider.dart';
+import 'screens/login_screen.dart';
+import 'screens/signup_screen.dart';
+import 'screens/home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,42 +25,22 @@ class YouthSafetyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // STEP 2 will add: ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         // STEP 4 will add: ChangeNotifierProvider(create: (_) => ContactProvider()),
       ],
       child: MaterialApp(
         title: 'Youth Safety',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorSchemeSeed: Colors.deepOrange,
+          colorSchemeSeed: const Color(0xFFE53935),
           useMaterial3: true,
         ),
-        home: const _FirebaseReadyScreen(),
-      ),
-    );
-  }
-}
-
-class _FirebaseReadyScreen extends StatelessWidget {
-  const _FirebaseReadyScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.shield_outlined, size: 64, color: Colors.deepOrange),
-            SizedBox(height: 16),
-            Text(
-              'Youth Safety',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text('Firebase initialized successfully ✅'),
-          ],
-        ),
+        initialRoute: '/login',
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/signup': (context) => const SignupScreen(),
+          '/home': (context) => const HomeScreen(),
+        },
       ),
     );
   }
