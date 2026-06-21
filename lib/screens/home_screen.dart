@@ -1,10 +1,13 @@
 // lib/screens/home_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'package:youth_safety_app/services/location_service.dart';
-import 'package:youth_safety_app/services/sms_service.dart';
 import 'package:youth_safety_app/services/call_service.dart';
 import 'package:youth_safety_app/services/alarm_service.dart';
+import 'package:youth_safety_app/providers/auth_provider.dart';
+import 'package:youth_safety_app/providers/sos_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,6 +33,33 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _triggerSOS() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final sosProvider = Provider.of<SosProvider>(context, listen: false);
+    final uid = authProvider.currentUser?.uid;
+
+    if (uid == null) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('SOS Activated! Sending help...'),
+        backgroundColor: Colors.red,
+      ),
+    );
+
+    final success = await sosProvider.triggerSOS(uid);
+
+    if (!mounted) return;
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(sosProvider.errorMessage ?? 'Failed to send SOS'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,7 +76,9 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.person, color: Colors.white),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushNamed(context, '/profile');
+            },
           ),
         ],
       ),
@@ -150,15 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // SOS Button
             GestureDetector(
-              onTap: () async {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('SOS Activated! Sending help...'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                await SmsService.sendSOSSms();
-              },
+              onTap: _triggerSOS,
               child: Container(
                 width: 200,
                 height: 200,
@@ -206,24 +230,24 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSpacing: 16,
               children: [
                 // Panic Alarm Button
-_featureButton(
-  icon: _isAlarmPlaying ? Icons.volume_off : Icons.volume_up,
-  label: _isAlarmPlaying ? 'Stop Alarm' : 'Panic Alarm',
-  color: Colors.orange,
-  onTap: () async {
-    if (_isAlarmPlaying) {
-      await AlarmService.stopAlarm();
-      setState(() {
-        _isAlarmPlaying = false;
-      });
-    } else {
-      await AlarmService.playAlarm();
-      setState(() {
-        _isAlarmPlaying = true;
-      });
-    }
-  },
-),
+                _featureButton(
+                  icon: _isAlarmPlaying ? Icons.volume_off : Icons.volume_up,
+                  label: _isAlarmPlaying ? 'Stop Alarm' : 'Panic Alarm',
+                  color: Colors.orange,
+                  onTap: () async {
+                    if (_isAlarmPlaying) {
+                      await AlarmService.stopAlarm();
+                      setState(() {
+                        _isAlarmPlaying = false;
+                      });
+                    } else {
+                      await AlarmService.playAlarm();
+                      setState(() {
+                        _isAlarmPlaying = true;
+                      });
+                    }
+                  },
+                ),
 
                 // Emergency Contacts Button
                 _featureButton(
@@ -252,6 +276,16 @@ _featureButton(
                   color: Colors.green,
                   onTap: () async {
                     await CallService.callEmergency();
+                  },
+                ),
+
+                // SOS History Button
+                _featureButton(
+                  icon: Icons.history,
+                  label: 'SOS History',
+                  color: Colors.redAccent,
+                  onTap: () {
+                    Navigator.pushNamed(context, '/sos-history');
                   },
                 ),
               ],

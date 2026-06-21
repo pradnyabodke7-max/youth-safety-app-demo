@@ -1,53 +1,33 @@
 // lib/services/sms_service.dart
 
 import 'package:url_launcher/url_launcher.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'location_service.dart';
+import 'package:youth_safety_app/models/contact_model.dart';
 
 class SmsService {
-  // Send SOS SMS to all emergency contacts
-  static Future<void> sendSOSSms() async {
-    try {
-      // Get location
-      String locationLink = await LocationService.getCurrentLocation();
+  /// Sends the SOS message to each given contact via the device's SMS app.
+  /// Contacts and location are now passed in (Firestore-backed) instead of
+  /// being read from local SharedPreferences.
+  static Future<void> sendSOSSms({
+    required List<ContactModel> contacts,
+    required String locationLink,
+  }) async {
+    if (contacts.isEmpty) {
+      return;
+    }
 
-      // SOS Message
-      String message =
-          'EMERGENCY! I need help! My current location is: $locationLink Please help me immediately!';
+    final String message =
+        'EMERGENCY! I need help! My current location is: $locationLink Please help me immediately!';
 
-      // Get emergency contacts from storage
-      final prefs = await SharedPreferences.getInstance();
-      final String? contactsJson = prefs.getString('emergency_contacts');
+    for (final contact in contacts) {
+      final Uri smsUri = Uri(
+        scheme: 'sms',
+        path: contact.phone,
+        queryParameters: {'body': message},
+      );
 
-      if (contactsJson == null) {
-        return;
+      if (await canLaunchUrl(smsUri)) {
+        await launchUrl(smsUri);
       }
-
-      final List<dynamic> contacts = jsonDecode(contactsJson);
-
-      if (contacts.isEmpty) {
-        return;
-      }
-
-      // Send SMS to each contact
-      for (var contact in contacts) {
-        String phone = contact['phone'];
-
-        // Create SMS link
-        final Uri smsUri = Uri(
-          scheme: 'sms',
-          path: phone,
-          queryParameters: {'body': message},
-        );
-
-        // Open SMS app
-        if (await canLaunchUrl(smsUri)) {
-          await launchUrl(smsUri);
-        }
-      }
-    } catch (e) {
-      print('Error sending SMS: $e');
     }
   }
 
@@ -56,18 +36,14 @@ class SmsService {
     required String phone,
     required String message,
   }) async {
-    try {
-      final Uri smsUri = Uri(
-        scheme: 'sms',
-        path: phone,
-        queryParameters: {'body': message},
-      );
+    final Uri smsUri = Uri(
+      scheme: 'sms',
+      path: phone,
+      queryParameters: {'body': message},
+    );
 
-      if (await canLaunchUrl(smsUri)) {
-        await launchUrl(smsUri);
-      }
-    } catch (e) {
-      print('Error sending SMS: $e');
+    if (await canLaunchUrl(smsUri)) {
+      await launchUrl(smsUri);
     }
   }
 }
