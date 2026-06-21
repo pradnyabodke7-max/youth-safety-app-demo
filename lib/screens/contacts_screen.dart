@@ -1,8 +1,10 @@
 // lib/screens/contacts_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:provider/provider.dart';
+
+import 'package:youth_safety_app/providers/auth_provider.dart';
+import 'package:youth_safety_app/providers/contact_provider.dart';
 
 class ContactsScreen extends StatefulWidget {
   const ContactsScreen({super.key});
@@ -12,9 +14,6 @@ class ContactsScreen extends StatefulWidget {
 }
 
 class _ContactsScreenState extends State<ContactsScreen> {
-  // List to store all contacts
-  List<Map<String, String>> contacts = [];
-
   // Controllers for the input fields
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -22,28 +21,22 @@ class _ContactsScreenState extends State<ContactsScreen> {
   @override
   void initState() {
     super.initState();
-    // Load saved contacts when screen opens
-    _loadContacts();
+    // Defer until after first frame so we can safely use context/Provider.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadContacts());
   }
 
-  // Load contacts from phone storage
+  String? _currentUid(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    return authProvider.currentUser?.uid;
+  }
+
   Future<void> _loadContacts() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? contactsJson = prefs.getString('emergency_contacts');
-    if (contactsJson != null) {
-      final List<dynamic> decoded = jsonDecode(contactsJson);
-      setState(() {
-        contacts = decoded
-            .map((e) => Map<String, String>.from(e))
-            .toList();
-      });
-    }
-  }
+    final uid = _currentUid(context);
+    if (uid == null) return;
 
-  // Save contacts to phone storage
-  Future<void> _saveContacts() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('emergency_contacts', jsonEncode(contacts));
+    final contactProvider =
+        Provider.of<ContactProvider>(context, listen: false);
+    await contactProvider.loadContacts(uid);
   }
 
   // Add a new contact
@@ -102,19 +95,39 @@ class _ContactsScreenState extends State<ContactsScreen> {
 
           // Save Button
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              final uid = _currentUid(context);
+              if (uid == null) return;
+
               if (_nameController.text.isNotEmpty &&
                   _phoneController.text.isNotEmpty) {
-                setState(() {
-                  contacts.add({
-                    'name': _nameController.text,
-                    'phone': _phoneController.text,
-                  });
-                });
-                _saveContacts();
+                final contactProvider =
+                    Provider.of<ContactProvider>(context, listen: false);
+
+                final name = _nameController.text.trim();
+                final phone = _phoneController.text.trim();
+
+                Navigator.pop(context);
                 _nameController.clear();
                 _phoneController.clear();
-                Navigator.pop(context);
+
+                final success = await contactProvider.addContact(
+                  uid: uid,
+                  name: name,
+                  phone: phone,
+                );
+
+                if (!mounted) return;
+                if (!success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        contactProvider.errorMessage ?? 'Failed to add contact',
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(
@@ -131,11 +144,32 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   // Delete a contact
-  void _deleteContact(int index) {
-    setState(() {
-      contacts.removeAt(index);
-    });
-    _saveContacts();
+  Future<void> _deleteContact(String contactId) async {
+    final uid = _currentUid(context);
+    if (uid == null) return;
+
+    final contactProvider =
+        Provider.of<ContactProvider>(context, listen: false);
+
+    final success =
+        await contactProvider.deleteContact(uid: uid, contactId: contactId);
+
+    if (!mounted) return;
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(contactProvider.errorMessage ?? 'Failed to delete contact'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
   }
 
   @override
@@ -168,8 +202,16 @@ class _ContactsScreenState extends State<ContactsScreen> {
         child: const Icon(Icons.add, color: Colors.white),
       ),
 
-      body: contacts.isEmpty
-          ? const Center(
+      body: Consumer<ContactProvider>(
+        builder: (context, contactProvider, _) {
+          if (contactProvider.isLoading && contactProvider.contacts.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final contacts = contactProvider.contacts;
+
+          if (contacts.isEmpty) {
+            return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -197,69 +239,76 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   ),
                 ],
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: contacts.length,
-              itemBuilder: (context, index) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withValues(alpha: 0.2),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(12),
+            );
+          }
 
-                    // Contact Avatar
-                    leading: CircleAvatar(
-                      backgroundColor: const Color(0xFFE53935),
-                      child: Text(
-                        contacts[index]['name']![0].toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: contacts.length,
+            itemBuilder: (context, index) {
+              final contact = contacts[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      spreadRadius: 2,
                     ),
+                  ],
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(12),
 
-                    // Contact Name
-                    title: Text(
-                      contacts[index]['name']!,
+                  // Contact Avatar
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFFE53935),
+                    child: Text(
+                      contact.name.isNotEmpty
+                          ? contact.name[0].toUpperCase()
+                          : '?',
                       style: const TextStyle(
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
                       ),
-                    ),
-
-                    // Contact Phone
-                    subtitle: Text(
-                      contacts[index]['phone']!,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
-                    ),
-
-                    // Delete Button
-                    trailing: IconButton(
-                      icon: const Icon(
-                        Icons.delete,
-                        color: Colors.red,
-                      ),
-                      onPressed: () => _deleteContact(index),
                     ),
                   ),
-                );
-              },
-            ),
+
+                  // Contact Name
+                  title: Text(
+                    contact.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+
+                  // Contact Phone
+                  subtitle: Text(
+                    contact.phone,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                    ),
+                  ),
+
+                  // Delete Button
+                  trailing: IconButton(
+                    icon: const Icon(
+                      Icons.delete,
+                      color: Colors.red,
+                    ),
+                    onPressed: () => _deleteContact(contact.id),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

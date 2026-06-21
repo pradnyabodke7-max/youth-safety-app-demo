@@ -7,8 +7,10 @@ import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/contacts_screen.dart';
 import 'package:youth_safety_app/providers/profile_provider.dart';
 import 'package:youth_safety_app/screens/profile_screen.dart';
+import 'package:youth_safety_app/providers/contact_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +30,7 @@ class YouthSafetyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
-        // STEP 4 will add: ChangeNotifierProvider(create: (_) => ContactProvider()),
+        ChangeNotifierProvider(create: (_) => ContactProvider()),
       ],
       child: MaterialApp(
         title: 'Youth Safety',
@@ -43,6 +45,7 @@ class YouthSafetyApp extends StatelessWidget {
           '/signup': (context) => const SignupScreen(),
           '/home': (context) => const HomeScreen(),
           '/profile': (context) => const ProfileScreen(),
+          '/contacts': (context) => const ContactsScreen(),
         },
       ),
     );
