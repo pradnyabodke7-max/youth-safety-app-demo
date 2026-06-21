@@ -7,6 +7,8 @@ import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/home_screen.dart';
+import 'package:youth_safety_app/providers/profile_provider.dart';
+import 'package:youth_safety_app/screens/profile_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,7 +16,6 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
   runApp(const YouthSafetyApp());
 }
 
@@ -26,6 +27,7 @@ class YouthSafetyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
         // STEP 4 will add: ChangeNotifierProvider(create: (_) => ContactProvider()),
       ],
       child: MaterialApp(
@@ -40,6 +42,7 @@ class YouthSafetyApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/signup': (context) => const SignupScreen(),
           '/home': (context) => const HomeScreen(),
+          '/profile': (context) => const ProfileScreen(),
         },
       ),
     );
