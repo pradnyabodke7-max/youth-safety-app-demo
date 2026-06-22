@@ -2,6 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:provider/provider.dart';
+
+import 'package:youth_safety_app/providers/auth_provider.dart';
+import 'package:youth_safety_app/providers/journey_provider.dart';
+import 'package:youth_safety_app/providers/sos_provider.dart';
 
 class JourneyTimerScreen extends StatefulWidget {
   const JourneyTimerScreen({super.key});
@@ -17,8 +22,36 @@ class _JourneyTimerScreenState extends State<JourneyTimerScreen> {
   bool _isRunning = false;
   Timer? _timer;
 
+  String? _currentUid(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    return authProvider.currentUser?.uid;
+  }
+
   // Start the timer
-  void _startTimer() {
+  Future<void> _startTimer() async {
+    final uid = _currentUid(context);
+    if (uid == null) return;
+
+    final journeyProvider =
+        Provider.of<JourneyProvider>(context, listen: false);
+
+    final started = await journeyProvider.startJourney(
+      uid: uid,
+      durationMinutes: _selectedMinutes,
+    );
+
+    if (!mounted) return;
+    if (!started) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text(journeyProvider.errorMessage ?? 'Failed to start journey'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _remainingSeconds = _selectedMinutes * 60;
       _isRunning = true;
@@ -38,13 +71,22 @@ class _JourneyTimerScreenState extends State<JourneyTimerScreen> {
     });
   }
 
-  // Stop the timer
-  void _stopTimer() {
+  // Stop the timer (user checked in safely)
+  Future<void> _stopTimer() async {
     _timer?.cancel();
     setState(() {
       _isRunning = false;
       _remainingSeconds = 0;
     });
+
+    final uid = _currentUid(context);
+    if (uid != null) {
+      final journeyProvider =
+          Provider.of<JourneyProvider>(context, listen: false);
+      await journeyProvider.completeJourney(uid);
+    }
+
+    if (!mounted) return;
 
     // Show safe message
     ScaffoldMessenger.of(context).showSnackBar(
@@ -56,7 +98,22 @@ class _JourneyTimerScreenState extends State<JourneyTimerScreen> {
   }
 
   // Trigger SOS when timer runs out
-  void _triggerSOS() {
+  Future<void> _triggerSOS() async {
+    final uid = _currentUid(context);
+
+    if (uid != null) {
+      final journeyProvider =
+          Provider.of<JourneyProvider>(context, listen: false);
+      final sosProvider = Provider.of<SosProvider>(context, listen: false);
+
+      // Mark the journey as expired and actually send the SOS
+      // (SMS + Firestore log), not just show a dialog.
+      await journeyProvider.expireJourney(uid);
+      await sosProvider.triggerSOS(uid);
+    }
+
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -69,7 +126,7 @@ class _JourneyTimerScreenState extends State<JourneyTimerScreen> {
           ),
         ),
         content: const Text(
-          'Your journey timer has expired!\nSOS message is being sent to your emergency contacts!',
+          'Your journey timer has expired!\nSOS message has been sent to your emergency contacts!',
           style: TextStyle(fontSize: 16),
         ),
         actions: [
@@ -172,8 +229,8 @@ class _JourneyTimerScreenState extends State<JourneyTimerScreen> {
                 boxShadow: [
                   BoxShadow(
                     color: _isRunning
-                        ? Colors.red.withOpacity(0.4)
-                        : Colors.grey.withOpacity(0.3),
+                        ? Colors.red.withValues(alpha: 0.4)
+                        : Colors.grey.withValues(alpha: 0.3),
                     blurRadius: 30,
                     spreadRadius: 10,
                   ),
