@@ -5,6 +5,7 @@ import 'package:youth_safety_app/services/location_service.dart';
 import 'package:youth_safety_app/services/sms_service.dart';
 import 'package:youth_safety_app/services/call_service.dart';
 import 'package:youth_safety_app/services/alarm_service.dart';
+import 'package:youth_safety_app/services/shake_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,31 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _getLocation();
+    _startShakeDetection();
+  }
+
+  // Start shake detection
+  void _startShakeDetection() {
+    ShakeService.startListening(
+      onShake: () {
+        // Show SOS triggered message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🚨 Shake detected! SOS Activated!'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        // Send SOS SMS
+        SmsService.sendSOSSms();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    ShakeService.stopListening();
+    super.dispose();
   }
 
   Future<void> _getLocation() async {
