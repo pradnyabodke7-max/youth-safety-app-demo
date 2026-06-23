@@ -15,6 +15,7 @@ import 'package:youth_safety_app/providers/contact_provider.dart';
 import 'package:youth_safety_app/providers/sos_provider.dart';
 import 'package:youth_safety_app/screens/sos_history_screen.dart';
 import 'package:youth_safety_app/providers/journey_provider.dart';
+import 'package:youth_safety_app/services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,11 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize local notifications (Step 8) before the app starts,
+  // so the notification channel exists and permission is requested early.
+  await NotificationService.init();
+
   runApp(const YouthSafetyApp());
 }
 

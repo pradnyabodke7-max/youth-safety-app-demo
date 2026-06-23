@@ -5,9 +5,11 @@ import 'package:youth_safety_app/repositories/sos_repository.dart';
 import 'package:youth_safety_app/repositories/contact_repository.dart';
 import 'package:youth_safety_app/services/sms_service.dart';
 import 'package:youth_safety_app/services/location_service.dart';
+import 'package:youth_safety_app/services/notification_service.dart';
 
 /// Orchestrates the full SOS flow: fetch contacts + location, send SMS,
-/// log the event to Firestore, and expose SOS history to the UI.
+/// log the event to Firestore, show a local notification, and expose
+/// SOS history to the UI.
 class SosProvider extends ChangeNotifier {
   final SosRepository _sosRepository = SosRepository();
   final ContactRepository _contactRepository = ContactRepository();
@@ -43,6 +45,7 @@ class SosProvider extends ChangeNotifier {
   /// 2. Gets the current location.
   /// 3. Sends an SMS to each contact.
   /// 4. Logs the event to Firestore.
+  /// 5. Shows a local notification confirming the SOS was sent.
   ///
   /// Returns true if the flow completed (even if no contacts were found),
   /// false only on an unexpected error.
@@ -64,6 +67,13 @@ class SosProvider extends ChangeNotifier {
         uid: uid,
         location: locationLink,
         contactsNotified: contacts.map((c) => c.phone).toList(),
+      );
+
+      await NotificationService.showNotification(
+        title: '🚨 SOS Sent',
+        body: contacts.isEmpty
+            ? 'SOS logged, but no emergency contacts were notified.'
+            : 'SOS sent to ${contacts.length} emergency contact(s).',
       );
 
       // Refresh history so the UI reflects the new log immediately.
